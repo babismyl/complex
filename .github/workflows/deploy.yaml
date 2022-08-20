@@ -15,11 +15,23 @@ jobs:
     - name: Checkout source code
       uses: actions/checkout@v3
 
-    - name: Build and Run the Docker image
+    - name: Build and Test client image
       run: |
-#        docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-        docker build -t docker.io/babismyl/complex -f Dockerfile.dev .
-        docker run -e CI=true babismyl/complex npm run test
+        docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+        docker build -t docker.io/babismyl/react-test -f ./client/Dockerfile.dev ./client
+        docker run -e CI=true babismyl/react-test npm run test -- --coverage
+
+    - name: Build All Images and Push them in Docker Hub
+      run: |
+        docker build -t docker.io/babismyl/multi-client ./client 
+        docker build -t docker.io/babismyl/multi-nginx ./nginx
+        docker build -t docker.io/babismyl/multi-server ./server
+        docker build -t docker.io/babismyl/multi-worker ./worker
+
+        docker push docker.io/babismyl/multi-client
+        docker push docker.io/babismyl/multi-nginx
+        docker push docker.io/babismyl/multi-server      
+        docker push docker.io/babismyl/multi-worker
     
     - name: Generate deployment package
       run: zip -r deploy.zip . -x '*.git*'
